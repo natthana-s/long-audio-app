@@ -1,0 +1,2 @@
+runtime: python311  # หรือ python310 เพื่อให้ใช้ Python ที่เสถียรและเข้ากับ Flask/Gunicorn
+entrypoint: gunicorn -b :$PORT main:app
