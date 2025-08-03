@@ -17,6 +17,12 @@ def synthesize_long_audio():
 
     client = texttospeech.TextToSpeechLongAudioSynthesizeClient()
 
+    # ✅ input config สำหรับ long audio
+    input_config = texttospeech.SynthesizeLongAudioRequest.InputConfig(
+        gcs_source=texttospeech.GcsSource(uri=f"gs://{GCS_INPUT_URI}"),
+        mime_type="text/plain"  # หรือ "application/ssml+xml"
+    )
+
     voice_config = texttospeech.VoiceSelectionParams(
         language_code=VOICE_LANGUAGE_CODE,
         name=VOICE_NAME
@@ -30,7 +36,7 @@ def synthesize_long_audio():
 
     request_proto = texttospeech.SynthesizeLongAudioRequest(
         parent=f"projects/{PROJECT_ID}/locations/global",
-        input_uri=f"gs://{GCS_INPUT_URI}",  # ✅ ใช้ input_uri แทน input.text_gcs_uri
+        input=input_config,
         audio_config=audio_config,
         voice=voice_config,
         output_gcs_uri=output_gcs_uri
