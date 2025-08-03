@@ -1,6 +1,6 @@
 import os
 from flask import Flask, request
-from google.cloud import texttospeech
+from google.cloud import texttospeech_v1 as texttospeech  # ใช้ v1 เพื่อเรียก LongAudio client ได้
 
 app = Flask(__name__)
 
@@ -9,55 +9,45 @@ GCS_INPUT_URI = os.environ.get("GCS_INPUT_URI")
 GCS_OUTPUT_URI_PREFIX = os.environ.get("GCS_OUTPUT_URI_PREFIX")
 VOICE_LANGUAGE_CODE = os.environ.get("VOICE_LANGUAGE_CODE", "th-TH")
 VOICE_NAME = os.environ.get("VOICE_NAME", "th-TH-Standard-A")
+PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT")
 
 @app.route("/", methods=["POST"])
 def synthesize_long_audio():
-    """
-    ฟังก์ชันหลักที่จะถูกเรียกเมื่อมี Request เข้ามา
-    เพื่อสั่งให้ Text-to-Speech เริ่มทำงาน
-    """
-    if not GCS_INPUT_URI or not GCS_OUTPUT_URI_PREFIX:
-        return "กรุณาตั้งค่า Environment Variables: GCS_INPUT_URI และ GCS_OUTPUT_URI_PREFIX", 500
+    if not GCS_INPUT_URI or not GCS_OUTPUT_URI_PREFIX or not PROJECT_ID:
+        return "กรุณาตั้งค่า Environment Variables: GCS_INPUT_URI, GCS_OUTPUT_URI_PREFIX และ GOOGLE_CLOUD_PROJECT", 500
 
-    # 1. สร้าง Client เพื่อเชื่อมต่อกับ Text-to-Speech API
-    client = texttospeech.TextToSpeechClient()
+    # ✅ ใช้ LongAudio Client
+    client = texttospeech.TextToSpeechLongAudioSynthesizeClient()
 
-    # 2. กำหนด Input จากไฟล์ใน Cloud Storage
+    # ✅ ใช้ text_gcs_uri แทน text
     input_config = texttospeech.SynthesisInput(
-        text=f"gs://{GCS_INPUT_URI}"
+        text_gcs_uri=f"gs://{GCS_INPUT_URI}"
     )
 
-    # 3. กำหนดค่าเสียงที่ต้องการ
     voice_config = texttospeech.VoiceSelectionParams(
         language_code=VOICE_LANGUAGE_CODE,
         name=VOICE_NAME
     )
 
-    # 4. กำหนดรูปแบบไฟล์เสียง (Output)
     audio_config = texttospeech.AudioConfig(
         audio_encoding=texttospeech.AudioEncoding.MP3
     )
-    
-    # 5. กำหนดตำแหน่งที่จะเก็บไฟล์เสียงที่แปลงเสร็จแล้ว
+
     output_gcs_uri = f"gs://{GCS_OUTPUT_URI_PREFIX}/output.mp3"
 
-    # 6. ประกอบร่าง Request ทั้งหมดเข้าด้วยกัน
-    request = texttospeech.SynthesizeLongAudioRequest(
+    request_proto = texttospeech.SynthesizeLongAudioRequest(
+        parent=f"projects/{PROJECT_ID}/locations/global",  # สำคัญมาก
         input=input_config,
         audio_config=audio_config,
         voice=voice_config,
-        output_gcs_uri=output_gcs_uri,
+        output_gcs_uri=output_gcs_uri
     )
 
-    # 7. สั่งให้ API เริ่มทำงาน (แบบ Asynchronous)
-    operation = client.synthesize_long_audio(request=request)
+    operation = client.synthesize_long_audio(request=request_proto)
 
     print(f"กำลังเริ่มการแปลงไฟล์เสียง... Operation Name: {operation.name}")
-    
-    # ตอบกลับทันทีว่าเริ่มงานแล้ว ไม่ต้องรอจนงานเสร็จ
+
     return f"เริ่มต้นการแปลงไฟล์เสียงแล้ว สามารถตรวจสอบผลลัพธ์ได้ที่ {output_gcs_uri} ในภายหลัง", 202
 
 if __name__ == "__main__":
-
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
-
