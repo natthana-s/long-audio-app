@@ -1,10 +1,9 @@
 import os
 from flask import Flask, request
-from google.cloud import texttospeech_v1 as texttospeech  # ใช้ v1 เพื่อเรียก LongAudio client ได้
+from google.cloud import texttospeech_v1 as texttospeech
 
 app = Flask(__name__)
 
-# ดึงค่าจาก Environment Variables ที่เราจะตั้งค่าบน Cloud Run
 GCS_INPUT_URI = os.environ.get("GCS_INPUT_URI")
 GCS_OUTPUT_URI_PREFIX = os.environ.get("GCS_OUTPUT_URI_PREFIX")
 VOICE_LANGUAGE_CODE = os.environ.get("VOICE_LANGUAGE_CODE", "th-TH")
@@ -16,13 +15,7 @@ def synthesize_long_audio():
     if not GCS_INPUT_URI or not GCS_OUTPUT_URI_PREFIX or not PROJECT_ID:
         return "กรุณาตั้งค่า Environment Variables: GCS_INPUT_URI, GCS_OUTPUT_URI_PREFIX และ GOOGLE_CLOUD_PROJECT", 500
 
-    # ✅ ใช้ LongAudio Client
     client = texttospeech.TextToSpeechLongAudioSynthesizeClient()
-
-    # ✅ ใช้ text_gcs_uri แทน text
-    input_config = texttospeech.SynthesisInput(
-        text_gcs_uri=f"gs://{GCS_INPUT_URI}"
-    )
 
     voice_config = texttospeech.VoiceSelectionParams(
         language_code=VOICE_LANGUAGE_CODE,
@@ -36,8 +29,8 @@ def synthesize_long_audio():
     output_gcs_uri = f"gs://{GCS_OUTPUT_URI_PREFIX}/output.mp3"
 
     request_proto = texttospeech.SynthesizeLongAudioRequest(
-        parent=f"projects/{PROJECT_ID}/locations/global",  # สำคัญมาก
-        input=input_config,
+        parent=f"projects/{PROJECT_ID}/locations/global",
+        input_uri=f"gs://{GCS_INPUT_URI}",  # ✅ ใช้ input_uri แทน input.text_gcs_uri
         audio_config=audio_config,
         voice=voice_config,
         output_gcs_uri=output_gcs_uri
@@ -46,8 +39,7 @@ def synthesize_long_audio():
     operation = client.synthesize_long_audio(request=request_proto)
 
     print(f"กำลังเริ่มการแปลงไฟล์เสียง... Operation Name: {operation.name}")
-
-    return f"เริ่มต้นการแปลงไฟล์เสียงแล้ว สามารถตรวจสอบผลลัพธ์ได้ที่ {output_gcs_uri} ในภายหลัง", 202
+    return f"เริ่มต้นการแปลงไฟล์เสียงแล้ว ตรวจสอบผลได้ที่ {output_gcs_uri}", 202
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
