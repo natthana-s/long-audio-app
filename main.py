@@ -1,14 +1,17 @@
 import os
 from flask import Flask, request
 from google.cloud import texttospeech_v1
-from google.cloud.texttospeech_v1.types import (
+from google.cloud.texttospeech_v1.types.cloud_tts_longaudio import (
     SynthesizeLongAudioRequest,
     GcsSource,
-    InputConfig,
+    InputConfig
+)
+
+# สำหรับพารามิเตอร์ทั่วไป
+from google.cloud.texttospeech_v1.types import (
     VoiceSelectionParams,
     AudioConfig
 )
-
 app = Flask(__name__)
 
 GCS_INPUT_URI = os.environ.get("GCS_INPUT_URI")
@@ -55,3 +58,4 @@ def synthesize_long_audio():
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
+
