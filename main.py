@@ -18,11 +18,10 @@ def synthesize_long_audio():
     client = texttospeech.TextToSpeechLongAudioSynthesizeClient()
 
     # ✅ input config สำหรับ long audio
-    input_config = texttospeech.SynthesizeLongAudioRequest.InputConfig(
+    input_config = texttospeech.InputConfig(
         gcs_source=texttospeech.GcsSource(uri=f"gs://{GCS_INPUT_URI}"),
-        mime_type="text/plain"  # หรือ "application/ssml+xml"
+        mime_type="text/plain"  # หรือ "application/ssml+xml" ถ้าไฟล์เป็น SSML
     )
-
     voice_config = texttospeech.VoiceSelectionParams(
         language_code=VOICE_LANGUAGE_CODE,
         name=VOICE_NAME
@@ -49,3 +48,4 @@ def synthesize_long_audio():
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
+
