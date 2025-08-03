@@ -50,7 +50,7 @@ def synthesize_long_audio():
     )
 
     # 7. สั่งให้ API เริ่มทำงาน (แบบ Asynchronous)
-    operation = client.synthesize_long_audio_async(request=request)
+    operation = client.synthesize_long_audio(request=request)
 
     print(f"กำลังเริ่มการแปลงไฟล์เสียง... Operation Name: {operation.name}")
     
@@ -60,3 +60,4 @@ def synthesize_long_audio():
 if __name__ == "__main__":
 
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
+
