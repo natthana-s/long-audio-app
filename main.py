@@ -50,7 +50,7 @@ def synthesize_long_audio():
     )
 
     # 7. สั่งให้ API เริ่มทำงาน (แบบ Asynchronous)
-    operation = client.synthesize_long_audio(request=request)
+    operation = client.synthesize_long_audio_async(request=request)
 
     print(f"กำลังเริ่มการแปลงไฟล์เสียง... Operation Name: {operation.name}")
     
@@ -58,4 +58,5 @@ def synthesize_long_audio():
     return f"เริ่มต้นการแปลงไฟล์เสียงแล้ว สามารถตรวจสอบผลลัพธ์ได้ที่ {output_gcs_uri} ในภายหลัง", 202
 
 if __name__ == "__main__":
+
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
